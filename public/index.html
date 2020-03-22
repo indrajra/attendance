@@ -1,90 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>QR Scanner Demo</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="./style.css">
 </head>
+
 <body>
-<style>
-    canvas {
-        display: none;
-    }
-    hr {
-        margin-top: 32px;
-    }
-    input[type="file"] {
-        display: block;
-        margin-bottom: 16px;
-    }
-    div {
-        margin-bottom: 16px;
-    }
-</style>
-<h1>Scan from WebCam:</h1>
-<div>
-    <b>Device has camera: </b>
-    <span id="cam-has-camera"></span>
-    <br>
-    <video muted playsinline id="qr-video" width="320" height="240"></video>
-</div>
-<b>Detected QR code: </b>
-<span id="cam-qr-result">None</span>
-<br>
-<b>Last detected at: </b>
-<span id="cam-qr-result-timestamp"></span>
-<hr>
+    <!-- header  -->
+    <section>
+        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#"><img src="./logo.png" alt="logo"></a>
+            </div>
+        </nav>
+    </section>
 
-<h1>Enter manually</h1>
-<input type="file" id="file-selector">
-<b>Detected QR code: </b>
-<span id="file-qr-result">None</span>
+    <!-- Scanner Section -->
+    <section>
+        <div class="container mt-lg-5">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Scan The QRcode:</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <b>Device has camera: </b>
+                                    <span id="cam-has-camera"></span>
+                                    <br>
+                                    <div class="text-center">
+                                        <video muted playsinline id="qr-video" width="320" height="240"></video>
+                                    </div>
+                                </div>
+                            </div>
 
-<script type="module">
-    import QrScanner from "./qr-scanner.min.js";
-    QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
+                            <hr data-content="OR" class="hr-text">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <b>Enter Employee Code : </b>
+                                    <form class="form-inline justify-content-center mt-3 needs-validation"
+                                        id="employeeCodeForm">
+                                        <div class="form-group mr-2">
+                                            <label for="employeeCode" class="sr-only">Employee Code</label>
+                                            <input type="text" class="form-control" id="employeeCode"
+                                                placeholder="Employee Code" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Sumbit</button>
+                                    </form>
+                                </div>
+                            </div>
 
-    const video = document.getElementById('qr-video');
-    const camHasCamera = document.getElementById('cam-has-camera');
-    const camQrResult = document.getElementById('cam-qr-result');
-    const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
-    const fileSelector = document.getElementById('file-selector');
-    const fileQrResult = document.getElementById('file-qr-result');
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Profile Detected</h6>
+                        </div>
+                        <div class="card-body">
+                            <b>Detected QR code: </b>
+                            <span id="cam-qr-result">None</span>
+                            <br>
+                            <b>Last detected at: </b>
+                            <span id="cam-qr-result-timestamp"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    function processQRdata(qrData) {
-        // FIXME: Hit registry and get details.
-        // isActive must be true - controls deny or allow button.
-    }
+        </div>
+    </section>
 
-    function setResult(label, result) {
-        label.textContent = result;
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="module">
 
-        processQRdata(JSON.parse(textContent));
-        camQrResultTimestamp.textContent = new Date().toString();
-        label.style.color = 'teal';
-        clearTimeout(label.highlightTimeout);
-        label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
-    }
 
-    // ####### Web Cam Scanning #######
+        import QrScanner from "./qr-scanner.min.js";
+        QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
 
-    QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
+        const video = document.getElementById('qr-video');
+        const camHasCamera = document.getElementById('cam-has-camera');
+        const camQrResult = document.getElementById('cam-qr-result');
+        const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
+        const fileSelector = document.getElementById('employeeCode');
+        const fileQrResult = document.getElementById('file-qr-result');
 
-    const scanner = new QrScanner(video, result => setResult(camQrResult, result));
-    scanner.start();
-    scanner.setInversionMode("both");
+        function processQRdata(qrData) {
+            console.log(qrData);
+            $.ajax({
+                type: "post",
+                url: "http://localhost:7007/attendance/registry/fetchUser",
+                data: {
+                    myLuckyNumber: qrData
+                },
+                success: function (response) {
+                    console.log(response);
+                }
+            });
 
-    // ####### File Scanning #######
-
-    fileSelector.addEventListener('change', event => {
-        const file = fileSelector.files[0];
-        if (!file) {
-            return;
+            // FIXME: Hit registry and get details.
+            // isActive must be true - controls deny or allow button.
         }
-        QrScanner.scanImage(file)
-            .then(result => setResult(fileQrResult, result))
-            .catch(e => setResult(fileQrResult, e || 'No QR code found.'));
-    });
 
-</script>
+
+        function setResult(label, result) {
+            label.textContent = result;
+            processQRdata(result);
+            camQrResultTimestamp.textContent = new Date().toString();
+            label.style.color = 'teal';
+            clearTimeout(label.highlightTimeout);
+            label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
+        }
+
+        // ####### Web Cam Scanning #######
+
+        QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
+
+        const scanner = new QrScanner(video, result => setResult(camQrResult, result));
+        scanner.start();
+        scanner.setInversionMode("both");
+
+
+        $("#employeeCodeForm").submit(function (event) {
+            event.preventDefault()
+            console.log(document.getElementById("employeeCode").value)
+        })
+    </script>
 </body>
+
 </html>
