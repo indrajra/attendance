@@ -60,6 +60,20 @@
                     </div>
                 </div>
                 <div class="col-lg-6 mb-4">
+                    <div class="card shadow mb-4" id="profile">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Mark Attendance</h6>
+                        </div>
+                        <div class="card-body text-center">
+                            <img class="img-circle" src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
+                            <h4 id="empName"></h4>
+                            <p id="empCode">Employee Code : </p>
+                            <p id="isActive">Active : </p>
+                            <button type="button" class="btn btn-success mr-4">Allow</button>
+                            <button type="button" class="btn btn-outline-danger">Deny</button>
+
+                        </div>
+                    </div>
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">Profile Detected</h6>
@@ -87,30 +101,42 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script type="module">
 
 
         import QrScanner from "./qr-scanner.min.js";
         QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
 
+        $('#profile').hide();
         const video = document.getElementById('qr-video');
         const camHasCamera = document.getElementById('cam-has-camera');
         const camQrResult = document.getElementById('cam-qr-result');
         const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
         const fileSelector = document.getElementById('employeeCode');
         const fileQrResult = document.getElementById('file-qr-result');
+        const qrScannerEnable = true;
+        var scanner;
 
         function processQRdata(qrData) {
-            console.log(qrData);
+            console.log("scanned qr data", qrData);
+            var reqBody = {
+                request: JSON.parse(qrData)
+            }
             $.ajax({
-                type: "post",
                 url: "http://localhost:7007/attendance/registry/fetchUser",
-                data: {
-                    myLuckyNumber: qrData
-                },
+                type: "post",
+                dataType: "application/json",
+                data: JSON.stringify(reqBody),
+                contentType: "application/json",
+                dataType: "json",
                 success: function (response) {
-                    console.log(response);
+                    console.log("Response", response);
+                    if (response.body.recordVerified) {
+                        viewProfile(reqBody.request)
+                    } else {
+                        enableScanning()
+                    }
                 }
             });
 
@@ -118,10 +144,23 @@
             // isActive must be true - controls deny or allow button.
         }
 
+        function viewProfile(profileData) {
+            $('#profile').show();
+            $("#empName").text(profileData.name);
+            $("#empCode").append(profileData.empCode);
+            $("#isActive").append(profileData.isActive)
+        }
+
+        function markAttendance() {
+
+        }
 
         function setResult(label, result) {
             label.textContent = result;
-            processQRdata(result);
+            if (result) {
+                disableScanning();
+                processQRdata(result);
+            }
             camQrResultTimestamp.textContent = new Date().toString();
             label.style.color = 'teal';
             clearTimeout(label.highlightTimeout);
@@ -131,10 +170,18 @@
         // ####### Web Cam Scanning #######
 
         QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
+        enableScanning();
 
-        const scanner = new QrScanner(video, result => setResult(camQrResult, result));
-        scanner.start();
-        scanner.setInversionMode("both");
+        function disableScanning() {
+            scanner.destroy();
+            scanner = null;
+        }
+
+        function enableScanning() {
+            scanner = new QrScanner(video, result => setResult(camQrResult, result));
+            scanner.start();
+            scanner.setInversionMode("both");
+        }
 
 
         $("#employeeCodeForm").submit(function (event) {

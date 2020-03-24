@@ -4,9 +4,10 @@ const config = {
         "keycloak": {
             "url": process.env.keycloak_url || "http://localhost:8080", 
             "realmName": process.env.keycloak_realmName || "PartnerRegistry",
-            "clientId": "utils",
-            "clientSecret": process.env.keycloak_clientSecret || "4ee47785-6434-4e6f-85d7-51096c3de579"
-        }
+            "clientId": "attendance",
+            "clientSecret": process.env.keycloak_clientSecret || "ee8ad405-d10b-471d-82a3-363674edf6e4"
+        },
+        "utilServiceUrl":"http://localhost:9081"
     }
 }
 
