@@ -67,10 +67,10 @@
                         <div class="card-body text-center">
                             <img class="img-circle" src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
                             <h4 id="empName"></h4>
-                            <p id="empCode">Employee Code : </p>
-                            <p id="isActive">Active : </p>
-                            <button type="button" class="btn btn-success mr-4">Allow</button>
-                            <button type="button" class="btn btn-outline-danger">Deny</button>
+                            <p>Employee Code : <span id="empCode"></span></p>
+                            <p>Active : <span id="isActive"></span></p>
+                            <button type="button" class="btn btn-success mr-4" id="markAttendance">Allow</button>
+                            <button type="button" class="btn btn-outline-danger" id="deny">Deny</button>
 
                         </div>
                     </div>
@@ -117,6 +117,7 @@
         const fileQrResult = document.getElementById('file-qr-result');
         const qrScannerEnable = true;
         var scanner;
+        var fetchUserData;
 
         function processQRdata(qrData) {
             console.log("scanned qr data", qrData);
@@ -132,8 +133,9 @@
                 dataType: "json",
                 success: function (response) {
                     console.log("Response", response);
-                    if (response.body.recordVerified) {
-                        viewProfile(reqBody.request)
+                    if (response.recordVerified) {
+                        fetchUserData = response;
+                        viewProfile(fetchUserData)
                     } else {
                         enableScanning()
                     }
@@ -147,11 +149,31 @@
         function viewProfile(profileData) {
             $('#profile').show();
             $("#empName").text(profileData.name);
-            $("#empCode").append(profileData.empCode);
-            $("#isActive").append(profileData.isActive)
+            $("#empCode").text(profileData.empCode);
+            $("#isActive").text(profileData.isActive);
+            //display photograph
         }
 
         function markAttendance() {
+            console.log("mark attendance", fetchUserData)
+            var reqBody = {
+                request: fetchUserData
+            }
+            $.ajax({
+                url: "http://localhost:7007/attendance/mark",
+                type: "post",
+                dataType: "application/json",
+                data: JSON.stringify(reqBody),
+                contentType: "application/json",
+                dataType: "json",
+                success: function (response) {
+                    console.log("markAttendance Response", response);
+                    if (response) {
+                        diableProfile();
+                        enableScanning();
+                    }
+                }
+            });
 
         }
 
@@ -172,6 +194,7 @@
         QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
         enableScanning();
 
+        //to diable the cammera
         function disableScanning() {
             scanner.destroy();
             scanner = null;
@@ -183,11 +206,28 @@
             scanner.setInversionMode("both");
         }
 
+        function diableProfile() {
+            $('#profile').hide();
+            camQrResultTimestamp.textContent = ''
+            camQrResult.textContent = 'none'
+        }
 
         $("#employeeCodeForm").submit(function (event) {
             event.preventDefault()
-            console.log(document.getElementById("employeeCode").value)
+            setResult(camQrResult, JSON.stringify({ empCode: document.getElementById("employeeCode").value }))
         })
+
+        //on click of allow button
+        $("#markAttendance").click(function () {
+            markAttendance();
+        });
+
+        //on click of deny button: hide profile card
+        $("#deny").click(function () {
+            diableProfile();
+        });
+
+
     </script>
 </body>
 

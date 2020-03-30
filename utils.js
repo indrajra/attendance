@@ -4,6 +4,8 @@
 var dateFormat = require('dateformat')
 var fs = require("fs")
 const reportsFolderPath = './reports'
+const csvjson = require('csvjson')
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 /**
  * @param{Date} d
@@ -26,10 +28,20 @@ var getFileNameForToday = () => {
  * @param{String} fileName
  */
 var takeFileBackup = (fileName) => {
-    fs.copyFileSync(fileName, reportsFolderPath + '/' + dateFormat(new Date(), "_HHMMSS.csv"));
+    fs.copyFileSync(fileName, reportsFolderPath + '/' + '_' + dateFormat(new Date(), "dd-mm-yyyy-hh-MM-ss") + '.csv');
 }
 
+
+const csvWriter = createCsvWriter({
+    path: getFileNameForToday(),
+    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "orgName", title: "orgName" }, { id: "entryTime", title: "entryTime" }, { id: "exitTime", title: "exitTime" }]
+});
+
 var csvToJson = function (csvFileName) {
+    var options = {
+        delimiter: ',', // optional
+        quote: '"' // optional
+    };
     var jsonObject = {}
     if (csvFileName != undefined) {
         var data = fs.readFileSync(csvFileName, { encoding: 'utf8' })
@@ -38,12 +50,25 @@ var csvToJson = function (csvFileName) {
     return jsonObject
 }
 
-var jsonToCsv = function (obj) {
 
+var addRecordsToCSV = async (data) => {
+    await csvWriter.writeRecords(data) // returns a promise
+        .then(() => {
+            console.log("+++++++++++done")
+        });
+}
+
+var getCurrentRecords = () => {
+    var attendanceRecords = []
+    var fileName = getFileNameForToday()
+    if (fs.existsSync(fileName)) {
+        attendanceRecords = csvToJson(fileName)
+    }
+    return attendanceRecords
 }
 
 var getRecordsForToday = () => {
-    var attendanceRecords = {}
+    var attendanceRecords = []
     var fileName = getFileNameForToday()
     if (fs.existsSync(fileName)) {
         takeFileBackup(fileName)
@@ -53,3 +78,5 @@ var getRecordsForToday = () => {
 }
 
 module.exports.getTodayAttendance = getRecordsForToday
+module.exports.addRecordsToCSV = addRecordsToCSV
+module.exports.getCurrentRecords = getCurrentRecords

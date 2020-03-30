@@ -13,7 +13,21 @@ class RegistryService {
             headers: value.headers,
             body: value.body
         }
-        console.log("options ", JSON.stringify(options))
+        httpUtil.post(options, function (err, res) {
+            if (res) {
+                callback(null, res.body)
+            } else {
+                callback(err)
+            }
+        })
+    }
+
+    searchRecord(value, callback) {
+        const options = {
+            url: registryUrl + "/registry/search",
+            headers: value.headers,
+            body: value.body
+        }
         httpUtil.post(options, function (err, res) {
             if (res) {
                 callback(null, res.body)

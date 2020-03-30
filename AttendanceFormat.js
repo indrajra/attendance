@@ -1,5 +1,5 @@
 class AttendanceFormat {
-    AttendanceFormat(userId, userName, orgName) {
+    constructor(userId, userName, orgName) {
         this.entryTime = undefined
         this.exitTime = undefined
         this.userId = userId
@@ -15,3 +15,4 @@ class AttendanceFormat {
         this.entryTime = d
     }
 }
+module.exports = AttendanceFormat 
