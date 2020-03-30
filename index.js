@@ -49,10 +49,16 @@ app.post("/attendance/mark", (req, res) => {
             logger.info("updating exit time of id", attendanceObj[index].userId)
         } else {
             attendanceFormat.setEntryTime(currentTime)
-            logger.info("adding entry time of id", attendanceObj[index].userId)
+            logger.info("adding entry time of id", attendanceFormat.userId)
             attendanceObj.push(attendanceFormat)
         }
     }
+    res.statusCode = 200
+    res.send({ status: "SUCCESSFUL" })
+})
+
+app.post("/update/csv", (req, res) => {
+    utils.addRecordsToCSV(attendanceObj);
     res.statusCode = 200
     res.send({ status: "SUCCESSFUL" })
 })
@@ -186,7 +192,7 @@ process.on("SIGINT", async function () {
     // FIXME: Save the csv file and then exit.
     if (attendanceObj.length > 0) {
         logger.info("saving reocrds to the csv file")
-       await utils.addRecordsToCSV(attendanceObj);
+        await utils.addRecordsToCSV(attendanceObj);
     }
     console.log("Getting killed")
     process.exit();

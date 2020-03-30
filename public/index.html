@@ -6,6 +6,8 @@
     <title>QR Scanner Demo</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css"
+        rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -15,13 +17,21 @@
         <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
             <div class="container">
                 <a class="navbar-brand" href="#"><img src="./logo.png" alt="logo"></a>
+                <button class="btn btn-outline-light my-2 my-sm-0" id="writeToCsv">Write Attendance</button>
             </div>
         </nav>
     </section>
 
     <!-- Scanner Section -->
     <section>
-        <div class="container mt-lg-5">
+        <div class="container mt-lg-4">
+            <div class="row mb-4">
+                <div class="col-sm-12">
+                    <input type="checkbox" id="toggle-event" checked data-toggle="toggle" data-on="Online"
+                        data-off="Offline" data-onstyle="primary" data-offstyle="secondary">
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="card shadow mb-4">
@@ -41,7 +51,7 @@
                             </div>
 
                             <hr data-content="OR" class="hr-text">
-                            <div class="row">
+                            <div class="row" id="enterEmpCodeSec">
                                 <div class="col-sm-12">
                                     <b>Enter Employee Code : </b>
                                     <form class="form-inline justify-content-center mt-3 needs-validation"
@@ -102,6 +112,8 @@
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
+
     <script type="module">
 
 
@@ -113,11 +125,10 @@
         const camHasCamera = document.getElementById('cam-has-camera');
         const camQrResult = document.getElementById('cam-qr-result');
         const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
-        const fileSelector = document.getElementById('employeeCode');
-        const fileQrResult = document.getElementById('file-qr-result');
         const qrScannerEnable = true;
         var scanner;
         var fetchUserData;
+        var toggleValue = $("input[type='checkbox']").is(":checked")
 
         function processQRdata(qrData) {
             console.log("scanned qr data", qrData);
@@ -177,11 +188,23 @@
 
         }
 
+        function offLineProcess(qrData) {
+            let data = JSON.parse(qrData);
+            data['osid'] = data.profile.substr(data.profile.lastIndexOf('/') + 1)
+            data['orgName'] = ''
+            fetchUserData = data;
+            viewProfile(data);
+        }
+
         function setResult(label, result) {
             label.textContent = result;
             if (result) {
                 disableScanning();
-                processQRdata(result);
+                if (toggleValue) {
+                    processQRdata(result);
+                } else {
+                    offLineProcess(result)
+                }
             }
             camQrResultTimestamp.textContent = new Date().toString();
             label.style.color = 'teal';
@@ -226,6 +249,33 @@
         $("#deny").click(function () {
             diableProfile();
         });
+
+        $("#writeToCsv").click(function () {
+            var reqBody = {}
+            $.ajax({
+                url: "http://localhost:7007/update/csv",
+                type: "post",
+                dataType: "application/json",
+                data: reqBody,
+                contentType: "application/json",
+                dataType: "json",
+                success: function (response) {
+                    console.log("Response", response);
+                }
+            });
+        })
+
+
+        $("input#toggle-event").change(function (event) {
+            toggleValue = $("input[type='checkbox']").is(":checked");
+            if (toggleValue) {
+                $("hr").show()
+                $('#enterEmpCodeSec').show();
+            } else {
+                $('#enterEmpCodeSec').hide();
+                $("hr").hide();
+            }
+        })
 
 
     </script>
