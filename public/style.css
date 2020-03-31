@@ -55,3 +55,6 @@ body {
 #empName{
     text-transform: capitalize;
 }
+
+.toggle.btn-style { border-radius: 1.2rem;}
+  .toggle.btn-style .toggle-handle { border-radius: 1.2rem; }

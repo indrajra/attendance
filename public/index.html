@@ -28,7 +28,7 @@
             <div class="row mb-4">
                 <div class="col-sm-12">
                     <input type="checkbox" id="toggle-event" checked data-toggle="toggle" data-on="Online"
-                        data-off="Offline" data-onstyle="primary" data-offstyle="secondary">
+                        data-off="Offline" data-style="btn-style" data-onstyle="secondary" data-offstyle="outline-secondary" data-size="sm">
                 </div>
             </div>
 
@@ -36,7 +36,7 @@
                 <div class="col-md-6">
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Scan The QRcode:</h6>
+                            <h6 class="m-0 font-weight-bold text-muted">Scan The QRcode:</h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -69,13 +69,15 @@
                         </div>
                     </div>
                 </div>
+                <!-- profile card -->
                 <div class="col-lg-6 mb-4">
                     <div class="card shadow mb-4" id="profile">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Mark Attendance</h6>
+                            <h6 class="m-0 font-weight-bold text-muted">Mark Attendance</h6>
                         </div>
                         <div class="card-body text-center">
-                            <img class="img-circle" src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
+                            <img class="img-circle" id="#profileUrl"
+                                src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
                             <h4 id="empName"></h4>
                             <p>Employee Code : <span id="empCode"></span></p>
                             <p>Active : <span id="isActive"></span></p>
@@ -86,7 +88,7 @@
                     </div>
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Profile Detected</h6>
+                            <h6 class="m-0 font-weight-bold text-muted">Profile Detected</h6>
                         </div>
                         <div class="card-body">
                             <b>Detected QR code: </b>
@@ -162,7 +164,9 @@
             $("#empName").text(profileData.name);
             $("#empCode").text(profileData.empCode);
             $("#isActive").text(profileData.isActive);
-            //display photograph
+            if (profileData.profileUrl) {
+                $("#profileUrl").attr("src", profileData.profileUrl)
+            }
         }
 
         function markAttendance() {
@@ -201,9 +205,9 @@
             if (result) {
                 disableScanning();
                 if (toggleValue) {
-                    processQRdata(result);
+                    processQRdata(result); //online
                 } else {
-                    offLineProcess(result)
+                    offLineProcess(result); //offline
                 }
             }
             camQrResultTimestamp.textContent = new Date().toString();
