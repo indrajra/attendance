@@ -32,10 +32,6 @@ var takeFileBackup = (fileName) => {
 }
 
 
-const csvWriter = createCsvWriter({
-    path: getFileNameForToday(),
-    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "orgName", title: "orgName" }, { id: "entryTime", title: "entryTime" }, { id: "exitTime", title: "exitTime" }]
-});
 
 var csvToJson = function (csvFileName) {
     var options = {
@@ -52,8 +48,14 @@ var csvToJson = function (csvFileName) {
 
 
 var addRecordsToCSV = async (data) => {
+    const csvWriter = createCsvWriter({
+        path: getFileNameForToday(),
+        header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "orgName", title: "orgName" }, { id: "entryTime", title: "entryTime" }, { id: "exitTime", title: "exitTime" }
+        ], append: false
+    });
     await csvWriter.writeRecords(data) // returns a promise
         .then(() => {
+            csvWriter.
             console.log("+++++++++++done")
         });
 }

@@ -116,7 +116,6 @@ const readRecord = (req, callback) => {
                     headers: getDefaultHeaders(token)
                 }
                 registryService.searchRecord(employeeReq, function (err, res) {
-                    console.log(err)
                     if (res && res.params.status === 'SUCCESSFUL') {
                         let resBody = res.result.Employee
                         if (resBody.length > 0) {
