@@ -93,10 +93,10 @@ const readRecord = (req, callback) => {
                         if (resBody.isActive && resBody.empCode == req.request.empCode) {
                             callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
                         } else {
-                            callback(null, { body: { recordVerified: false }, statusCode: 200 })
+                            callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
                         }
                     } else {
-                        callback({ body: { errMsg: err }, statusCode: 500 }, null)
+                        callback(null, { body: { errMsg: err.code }, statusCode: 500 })
                     }
                 })
             } else {
@@ -116,8 +116,8 @@ const readRecord = (req, callback) => {
                     headers: getDefaultHeaders(token)
                 }
                 registryService.searchRecord(employeeReq, function (err, res) {
+                    console.log(err)
                     if (res && res.params.status === 'SUCCESSFUL') {
-                        console.log("su", JSON.stringify(res))
                         let resBody = res.result.Employee
                         if (resBody.length > 0) {
                             if (resBody[0].isActive && resBody[0].empCode == req.request.empCode) {
@@ -130,7 +130,7 @@ const readRecord = (req, callback) => {
                         }
 
                     } else {
-                        callback({ body: { errMsg: err }, statusCode: 500 }, null)
+                        callback(null, { body: { errMsg: err.code }, statusCode: 500 })
                     }
                 })
             }

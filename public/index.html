@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>QR Scanner Demo</title>
+    <title>QR Scanner</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css"
@@ -86,6 +86,17 @@
 
                         </div>
                     </div>
+
+                    <div class="card shadow mb-4" id="errorCard">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-muted">Error</h6>
+                        </div>
+                        <div class="card-body">
+                            <b>Error msg: </b>
+                            <span id="errorMsg">None</span>
+                        </div>
+                    </div>
+
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-muted">Profile Detected</h6>
@@ -100,18 +111,16 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
 
     <script src="./jquery-3.3.1.slim.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
-        crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
         integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
         crossorigin="anonymous"></script>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
 
     <script type="module">
@@ -121,10 +130,12 @@
         QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
 
         $('#profile').hide();
+        $('#errorCard').hide();
         const video = document.getElementById('qr-video');
         const camHasCamera = document.getElementById('cam-has-camera');
         const camQrResult = document.getElementById('cam-qr-result');
         const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
+        const errorMsg = document.getElementById("errorMsg");
         const qrScannerEnable = true;
         var scanner;
         var fetchUserData;
@@ -148,13 +159,22 @@
                         fetchUserData = response;
                         viewProfile(fetchUserData)
                     } else {
+                        viewErrorCard(response)
                         enableScanning()
                     }
-                }
+                },
+                error: function (error) {
+                    console.log("err in fetching data", error.responseJSON);
+                    viewErrorCard({ errMsg: error.statusText + " : please try again later" })
+                    enableScanning()
+                },
             });
+        }
 
-            // FIXME: Hit registry and get details.
-            // isActive must be true - controls deny or allow button.
+        //to show error messages
+        function viewErrorCard(data) {
+            errorMsg.textContent = data.errMsg
+            $('#errorCard').show().delay(3000).hide(0);
         }
 
         function viewProfile(profileData) {
