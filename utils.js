@@ -55,7 +55,6 @@ var addRecordsToCSV = async (data) => {
     });
     await csvWriter.writeRecords(data) // returns a promise
         .then(() => {
-            csvWriter.
             console.log("+++++++++++done")
         });
 }
