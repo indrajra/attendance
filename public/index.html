@@ -61,7 +61,7 @@
                                             <input type="text" class="form-control" id="employeeCode"
                                                 placeholder="Employee Code" required>
                                         </div>
-                                        <button type="submit" class="btn btn-primary">Sumbit</button>
+                                        <button type="submit" class="btn btn-primary">Submit</button>
                                     </form>
                                 </div>
                             </div>
@@ -174,7 +174,9 @@
         //to show error messages
         function viewErrorCard(data) {
             errorMsg.textContent = data.errMsg
-            $('#errorCard').show().delay(3000).hide(0);
+            $('#errorCard').show().delay(3000).hide(0, function () {
+                diableProfile();
+            });
         }
 
         function viewProfile(profileData) {
