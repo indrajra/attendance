@@ -88,12 +88,16 @@ const readRecord = (req, callback) => {
                     headers: getDefaultHeaders(token)
                 }
                 registryService.readRecord(employeeReq, function (err, res) {
-                    if (res && res.params.status === 'SUCCESSFUL') {
-                        let resBody = res.result.Employee
-                        if (resBody.isActive && resBody.empCode == req.request.empCode) {
-                            callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
-                        } else {
-                            callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                    if (res) {
+                        if (res.params.status === 'SUCCESSFUL') {
+                            let resBody = res.result.Employee
+                            if (resBody.isActive && resBody.empCode == req.request.empCode) {
+                                callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
+                            } else {
+                                callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                            }
+                        } else if (res.params.status === 'UNSUCCESSFUL') {
+                            callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
                         }
                     } else {
                         callback(null, { body: { errMsg: err.code }, statusCode: 500 })
