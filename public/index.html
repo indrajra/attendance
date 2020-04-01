@@ -160,13 +160,11 @@
                         viewProfile(fetchUserData)
                     } else {
                         viewErrorCard(response)
-                        enableScanning()
                     }
                 },
                 error: function (error) {
                     console.log("err in fetching data", error.responseJSON);
                     viewErrorCard({ errMsg: error.statusText + " : please try again later" })
-                    enableScanning()
                 },
             });
         }
@@ -176,7 +174,11 @@
             errorMsg.textContent = data.errMsg
             $('#errorCard').show().delay(3000).hide(0, function () {
                 diableProfile();
+                enableScanning()
             });
+            if ($("#profile").is(":visible")) {
+                $('#profile').hide();
+            }
         }
 
         function viewProfile(profileData) {
@@ -243,8 +245,9 @@
 
         //to diable the cammera
         function disableScanning() {
-            scanner.destroy();
-            scanner = null;
+            if (scanner) {
+                scanner.destroy();
+            }
         }
 
         function enableScanning() {
@@ -262,6 +265,7 @@
         $("#employeeCodeForm").submit(function (event) {
             event.preventDefault()
             setResult(camQrResult, JSON.stringify({ empCode: document.getElementById("employeeCode").value }))
+            document.getElementById("employeeCodeForm").reset()
         })
 
         //on click of allow button
