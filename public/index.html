@@ -18,6 +18,7 @@
             <div class="container">
                 <a class="navbar-brand" href="#"><img src="./logo.png" alt="logo"></a>
                 <button class="btn btn-outline-light my-2 my-sm-0" id="writeToCsv">Write Attendance</button>
+                <button class="btn btn-outline-light my-2 my-sm-1" id="stopCam">Camera</button>
             </div>
         </nav>
     </section>
@@ -27,39 +28,38 @@
         <div class="container mt-lg-4">
             <div class="row mb-4">
                 <div class="col-sm-12">
-                    <input type="checkbox" id="toggle-event" checked data-toggle="toggle" data-on="Online"
-                        data-off="Offline" data-style="btn-style" data-onstyle="secondary"
-                        data-offstyle="outline-secondary" data-size="sm">
+                    <input type="checkbox" id="toggle-event" checked data-toggle="toggle" 
+                        data-on="Online" data-off="Offline" 
+                        data-style="btn-primary" data-onstyle="primary" data-offstyle="secondary" 
+                        data-size="sm">
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6">
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-muted">Scan The QRcode:</h6>
+                            <h6 class="m-0 font-weight-bold text-muted">Scan QR</h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-sm-12">
-                                    <b>Device has camera: </b>
+                                    <h10>Device has camera: </h10>
                                     <span id="cam-has-camera"></span>
                                     <br>
                                     <div class="text-center">
-                                        <video muted playsinline id="qr-video" width="320" height="240"></video>
+                                        <video muted playsinline id="qr-video" width="320" height="240" style="margin-bottom:-10px"></video>
                                     </div>
                                 </div>
                             </div>
-
                             <hr data-content="OR" class="hr-text">
                             <div class="row" id="enterEmpCodeSec">
-                                <div class="col-sm-12">
-                                    <b>Enter Employee Code : </b>
+                                <div class="col-sm-12 pb-2">
                                     <form class="form-inline justify-content-center mt-3 needs-validation"
                                         id="employeeCodeForm">
                                         <div class="form-group mr-2">
                                             <label for="employeeCode" class="sr-only">Employee Code</label>
                                             <input type="text" class="form-control" id="employeeCode"
-                                                placeholder="Employee Code" required>
+                                                placeholder="Enter employee code" required>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Submit</button>
                                     </form>
@@ -73,40 +73,35 @@
                 <div class="col-lg-6 mb-4">
                     <div class="card shadow mb-4" id="profile">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-muted">Mark Attendance</h6>
+                            <h6 class="m-0 font-weight-bold text-muted">Result</h6>
                         </div>
                         <div class="card-body text-center">
                             <img class="img-circle" id="#profileUrl"
                                 src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
-                            <h4 id="empName"></h4>
-                            <p>Employee Code : <span id="empCode"></span></p>
-                            <p>Active : <span id="isActive"></span></p>
-                            <button type="button" class="btn btn-success mr-4" id="markAttendance">Allow</button>
-                            <button type="button" class="btn btn-outline-danger" id="deny">Deny</button>
+                            <ul style="list-style-type:none;margin-left: -15rem;" >
+                             <li>
+                                <p class="detailsp"> Name: <span id="empName"></span></p>
+                             </li>
+                             <li>
+                                <p class="detailsp">Code: <span id="empCode"></span></p>
+                             </li>
+                             <li>
+                                <p class="detailsp">Active: <span id="isActive"></span></p>
+                             </li>
+                             </ul>
+                            <button type="button" class="btn btn-default btn-primary mr-4" id="markAttendance">Allow</button>
+                            <button type="button" class="btn btn-outline-warning" id="deny">Deny</button>
 
                         </div>
                     </div>
 
-                    <div class="card shadow mb-4" id="errorCard">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-muted">Error</h6>
+                    <div class="card shadow mb-4" style="margin-top:-20px">
+                        <div class="card-header py-2">
+                            <h6 class="m-0 font-weight-bold text-muted">Debug only</h6>
                         </div>
                         <div class="card-body">
-                            <b>Error msg: </b>
-                            <span id="errorMsg">None</span>
-                        </div>
-                    </div>
-
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-muted">Profile Detected</h6>
-                        </div>
-                        <div class="card-body">
-                            <b>Detected QR code: </b>
-                            <span id="cam-qr-result">None</span>
-                            <br>
-                            <b>Last detected at: </b>
-                            <span id="cam-qr-result-timestamp"></span>
+                            <span class="small" id="cam-qr-result">None</span> <br/>
+                            <span class="small" id="cam-qr-result-timestamp"></span>
                         </div>
                     </div>
                 </div>
@@ -129,8 +124,7 @@
         import QrScanner from "./qr-scanner.min.js";
         QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
 
-        $('#profile').hide();
-        $('#errorCard').hide();
+        setProfile(); // show empty profile on load
         const video = document.getElementById('qr-video');
         const camHasCamera = document.getElementById('cam-has-camera');
         const camQrResult = document.getElementById('cam-qr-result');
@@ -157,38 +151,44 @@
                     console.log("Response", response);
                     if (response.recordVerified) {
                         fetchUserData = response;
-                        viewProfile(fetchUserData)
+                        setProfile(fetchUserData)
                     } else {
                         viewErrorCard(response)
                     }
                 },
                 error: function (error) {
-                    console.log("err in fetching data", error.responseJSON);
-                    viewErrorCard({ errMsg: error.responseJSON.errMsg })
+                    var result = error.responseJSON || JSON.parse(error)
+                    console.log("err in fetching data", result);
+                    viewErrorCard(result)
                 },
             });
         }
 
         //to show error messages
         function viewErrorCard(data) {
-            errorMsg.textContent = data.errMsg
-            $('#errorCard').show().delay(3000).hide(0, function () {
-                diableProfile();
-                enableScanning()
-            });
-            if ($("#profile").is(":visible")) {
-                $('#profile').hide();
-            }
+            alert("Error " + JSON.stringify(data))
+            clearOldResult();
+            startScanning()
+            setProfile()
         }
 
-        function viewProfile(profileData) {
-            $('#profile').show();
+        function setProfile(profileData) {
+            if (profileData) {
+                console.log("someone is calling");
             $("#empName").text(profileData.name);
             $("#empCode").text(profileData.empCode);
             $("#isActive").text(profileData.isActive);
             if (profileData.profileUrl) {
                 $("#profileUrl").attr("src", profileData.profileUrl)
             }
+        } else {
+            var emptyStr = "";
+            $("#empName").text(emptyStr);
+            $("#empCode").text(emptyStr);
+            $("#isActive").text(emptyStr);
+            $("#profileUrl").attr("src", "http://ssl.gstatic.com/accounts/ui/avatar_2x.png")
+            
+        }
         }
 
         function markAttendance() {
@@ -206,7 +206,7 @@
                 success: function (response) {
                     console.log("markAttendance Response", response);
                     if (response) {
-                        diableProfile();
+                        clearOldResult();
                         enableScanning();
                     }
                 }
@@ -219,13 +219,13 @@
             data['osid'] = data.profile.substr(data.profile.lastIndexOf('/') + 1)
             data['orgName'] = ''
             fetchUserData = data;
-            viewProfile(data);
+            setProfile(data);
         }
 
         function setResult(label, result) {
             label.textContent = result;
             if (result) {
-                disableScanning();
+                stopScanning();
                 if (toggleValue) {
                     processQRdata(result); //online
                 } else {
@@ -240,24 +240,29 @@
 
         // ####### Web Cam Scanning #######
 
-        QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
-        enableScanning();
+        QrScanner.hasCamera().then(hasCamera => {
+            createScanner();
+            startScanning();
+        });
 
-        //to diable the cammera
-        function disableScanning() {
+        function stopScanning() {
             if (scanner) {
-                scanner.destroy();
+                scanner.stop();
             }
         }
 
-        function enableScanning() {
+        function createScanner() {
             scanner = new QrScanner(video, result => setResult(camQrResult, result));
-            scanner.start();
             scanner.setInversionMode("both");
         }
 
-        function diableProfile() {
-            $('#profile').hide();
+        function startScanning() {
+            if (scanner) {
+                scanner.start();
+            }
+        }
+
+        function clearOldResult() {
             camQrResultTimestamp.textContent = ''
             camQrResult.textContent = 'none'
         }
@@ -275,8 +280,29 @@
 
         //on click of deny button: hide profile card
         $("#deny").click(function () {
-            diableProfile();
-            enableScanning();
+            clearOldResult();
+            startScanning();
+        });
+
+        $("#stopCam").click(function() {
+            if (scanner) {
+                if (scanner.isActive()) {
+                    console.log("Stopped camera");
+                    stopScanning()
+
+                    // FIXME
+                    $("#stopCam").text = "Start cam"
+                    $("#stopCam").style = "btn-primary"
+                } else {
+                    startScanning()
+
+                    // FIXME
+                    $("#stopCam").text = "Stop cam"
+                    $("#stopCam").style = "btn-outline-warning"
+                }
+            } else {
+                alert("Camera not detected");
+            }
         });
 
         $("#writeToCsv").click(function () {

@@ -5,12 +5,13 @@ var bodyParser = require("body-parser");
 var cors = require("cors")
 const server = http.createServer(app);
 const utils = require('./utils')
-const port = 7007;
+const vars = require('./sdk/vars');
+const port = vars.attendancePort;
 const RegistryService = require('./sdk/RegistryService')
 const KeycloakHelper = require('./sdk/KeycloakHelper')
 const AttendanceFormat = require('./AttendanceFormat')
 const logger = require('./sdk/log4j');
-const vars = require('./sdk/vars').getAllVars(process.env.NODE_ENV);
+
 var async = require('async');
 const keycloakHelper = new KeycloakHelper(vars.keycloak);
 var registryService = new RegistryService();
@@ -23,12 +24,15 @@ app.use(bodyParser.json());
 
 app.post("/attendance/registry/fetchUser", (req, res) => {
     // Given the QR code data in the request, processes and sends back info
+    logger.debug("fetchUser start " + JSON.stringify(req.body))
     readRecord(req.body, (err, data) => {
         if (data) {
             res.statusCode = data.statusCode
             res.send(data.body)
         } else {
-            res.send(err)
+            res.statusCode = 404
+            logger.error("fetchUser " + err);
+            res.send({errMsg: err.message})
         }
     })
 
@@ -70,83 +74,86 @@ const getCurrentTime = () => {
 const readRecord = (req, callback) => {
     async.waterfall([
         function (callback) {
-            getTokenDetails(callback);
+            getTokenDetails(callback)
         },
         function (token, callback) {
-            const profile = req.request.profile;
-            if (profile) { //scan block
-                let employeeReq = {
-                    body: {
-                        id: "open-saber.registry.read",
-                        request: {
-                            Employee: {
-                                osid: profile.substr(profile.lastIndexOf('/') + 1)
-                            },
-                            viewTemplateId: "1253943a-6fe3-11ea-bc55-0242ac130003.json"
+            if (token) {
+                const profile = req.request.profile;
+                if (profile) { //scan block
+                    let employeeReq = {
+                        body: {
+                            id: "open-saber.registry.read",
+                            request: {
+                                Employee: {
+                                    osid: profile.substr(profile.lastIndexOf('/') + 1)
+                                },
+                                viewTemplateId: "1253943a-6fe3-11ea-bc55-0242ac130003.json"
+                            }
+                        },
+                        headers: getDefaultHeaders(token)
+                    }
+                    registryService.readRecord(employeeReq, function (err, res) {
+                        if (res) {
+                            if (res.params.status === 'SUCCESSFUL') {
+                                let resBody = res.result.Employee
+                                if (resBody.isActive && resBody.empCode == req.request.empCode) {
+                                    callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
+                                } else {
+                                    callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                                }
+                            } else if (res.params.status === 'UNSUCCESSFUL') {
+                                callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
+                            }
+                        } else {
+                            callback(null, { body: { errMsg: err.code }, statusCode: 500 })
                         }
-                    },
-                    headers: getDefaultHeaders(token)
-                }
-                registryService.readRecord(employeeReq, function (err, res) {
-                    if (res) {
-                        if (res.params.status === 'SUCCESSFUL') {
+                    })
+                } else {
+                    //manully entry of empCode 
+                    let employeeReq = {
+                        body: {
+                            id: "open-saber.registry.search",
+                            request: {
+                                entityType: ["Employee"],
+                                filters: {
+                                    empCode: {
+                                        eq: req.request.empCode
+                                    }
+                                }
+                            }
+                        },
+                        headers: getDefaultHeaders(token)
+                    }
+                    registryService.searchRecord(employeeReq, function (err, res) {
+                        if (res && res.params.status === 'SUCCESSFUL') {
                             let resBody = res.result.Employee
-                            if (resBody.isActive && resBody.empCode == req.request.empCode) {
-                                callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
+                            if (resBody.length > 0) {
+                                if (resBody[0].isActive && resBody[0].empCode == req.request.empCode) {
+                                    callback(null, { body: { ...resBody[0], ...{ recordVerified: true } }, statusCode: 200 })
+                                } else {
+                                    callback(null, { body: { recordVerified: false }, statusCode: 200 })
+                                }
                             } else {
                                 callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
                             }
-                        } else if (res.params.status === 'UNSUCCESSFUL') {
-                            callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
-                        }
-                    } else {
-                        callback(null, { body: { errMsg: err.code }, statusCode: 500 })
-                    }
-                })
-            } else {
-                //manully entry of empCode 
-                let employeeReq = {
-                    body: {
-                        id: "open-saber.registry.search",
-                        request: {
-                            entityType: ["Employee"],
-                            filters: {
-                                empCode: {
-                                    eq: req.request.empCode
-                                }
-                            }
-                        }
-                    },
-                    headers: getDefaultHeaders(token)
-                }
-                registryService.searchRecord(employeeReq, function (err, res) {
-                    if (res && res.params.status === 'SUCCESSFUL') {
-                        let resBody = res.result.Employee
-                        if (resBody.length > 0) {
-                            if (resBody[0].isActive && resBody[0].empCode == req.request.empCode) {
-                                callback(null, { body: { ...resBody[0], ...{ recordVerified: true } }, statusCode: 200 })
-                            } else {
-                                callback(null, { body: { recordVerified: false }, statusCode: 200 })
-                            }
+
                         } else {
-                            callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                            callback(null, { body: { errMsg: err.code }, statusCode: 500 })
                         }
-
-                    } else {
-                        callback(null, { body: { errMsg: err.code }, statusCode: 500 })
-                    }
-                })
+                    })
+                }
+            } else {
+                callback (new Error("Cannot get token"))
             }
-
         }
     ], function (err, result) {
-        logger.info('Main Callback --> ' + result);
-        if (err) {
-            callback(err, null)
-        } else {
-            callback(null, result);
-        }
-    });
+    logger.info('Main Callback --> ' + err + " " + result);
+    if (err) {
+        callback(err, null)
+    } else {
+        callback(null, result);
+    }
+});
 }
 
 const getDefaultHeaders = (token) => {
@@ -169,8 +176,8 @@ const getTokenDetails = (callback) => {
         if (token) {
             callback(null, 'Bearer ' + token.access_token.token);
         } else {
-            logger.info("error in generating token", err)
-            callback(err);
+            logger.info("Error in getting token", err)
+            callback(null, null);
         }
     });
 }

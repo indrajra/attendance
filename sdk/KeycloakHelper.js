@@ -26,7 +26,7 @@ class KeycloakHelper {
             let grant = await this.grantManager.obtainFromClientCredentials(undefined, 'openid');
             return callback(null, grant);
         } catch (error) {
-            console.log("error", error)
+            callback(error)
         }
     }    
 }
