@@ -14,11 +14,13 @@
 <body>
     <!-- header  -->
     <section>
-        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark justify-content-between">
             <div class="container">
                 <a class="navbar-brand" href="#"><img src="./logo.png" alt="logo"></a>
-                <button class="btn btn-outline-light my-2 my-sm-0" id="writeToCsv">Write Attendance</button>
-                <button class="btn btn-outline-light my-2 my-sm-1" id="stopCam">Camera</button>
+                <div>
+                    <button class="btn btn-outline-light my-2 my-sm-0 mr-4" id="writeToCsv">Write Attendance</button>
+                    <button class="btn btn-outline-warning my-2 my-sm-1" id="stopCam">Stop cam</button>
+                </div>
             </div>
         </nav>
     </section>
@@ -28,9 +30,8 @@
         <div class="container mt-lg-4">
             <div class="row mb-4">
                 <div class="col-sm-12">
-                    <input type="checkbox" id="toggle-event" checked data-toggle="toggle" 
-                        data-on="Online" data-off="Offline" 
-                        data-style="btn-primary" data-onstyle="primary" data-offstyle="secondary" 
+                    <input type="checkbox" id="toggle-event" checked data-toggle="toggle" data-on="Online"
+                        data-off="Offline" data-style="btn-primary" data-onstyle="primary" data-offstyle="secondary"
                         data-size="sm">
                 </div>
             </div>
@@ -47,13 +48,14 @@
                                     <span id="cam-has-camera"></span>
                                     <br>
                                     <div class="text-center">
-                                        <video muted playsinline id="qr-video" width="320" height="240" style="margin-bottom:-10px"></video>
+                                        <video muted playsinline id="qr-video" width="320" height="240"
+                                            style="margin-bottom:-10px"></video>
                                     </div>
                                 </div>
                             </div>
                             <hr data-content="OR" class="hr-text">
                             <div class="row" id="enterEmpCodeSec">
-                                <div class="col-sm-12 pb-2">
+                                <div class="col-sm-12 mb-4">
                                     <form class="form-inline justify-content-center mt-3 needs-validation"
                                         id="employeeCodeForm">
                                         <div class="form-group mr-2">
@@ -78,18 +80,27 @@
                         <div class="card-body text-center">
                             <img class="img-circle" id="#profileUrl"
                                 src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
-                            <ul style="list-style-type:none;margin-left: -15rem;" >
-                             <li>
-                                <p class="detailsp"> Name: <span id="empName"></span></p>
-                             </li>
-                             <li>
-                                <p class="detailsp">Code: <span id="empCode"></span></p>
-                             </li>
-                             <li>
-                                <p class="detailsp">Active: <span id="isActive"></span></p>
-                             </li>
-                             </ul>
-                            <button type="button" class="btn btn-default btn-primary mr-4" id="markAttendance">Allow</button>
+                            <div>
+                                <table
+                                    class="table table-borderless table-sm table-responsive d-flex justify-content-center">
+                                    <tbody>
+                                        <tr>
+                                            <td>Name :</td>
+                                            <td class="text-start"><span id="empName"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Code :</td>
+                                            <td class="text-start"><span id="empCode"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Active :</td>
+                                            <td class="text-start"><span id="isActive"></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-default btn-primary mr-4"
+                                id="markAttendance">Allow</button>
                             <button type="button" class="btn btn-outline-warning" id="deny">Deny</button>
 
                         </div>
@@ -100,7 +111,9 @@
                             <h6 class="m-0 font-weight-bold text-muted">Debug only</h6>
                         </div>
                         <div class="card-body">
-                            <span class="small" id="cam-qr-result">None</span> <br/>
+                            <span class="small font-weight-bold">Detected QR: </span>
+                            <span class="small" id="cam-qr-result">None</span> <br />
+                            <span class="small font-weight-bold">Last detected at: </span>
                             <span class="small" id="cam-qr-result-timestamp"></span>
                         </div>
                     </div>
@@ -175,20 +188,24 @@
         function setProfile(profileData) {
             if (profileData) {
                 console.log("someone is calling");
-            $("#empName").text(profileData.name);
-            $("#empCode").text(profileData.empCode);
-            $("#isActive").text(profileData.isActive);
-            if (profileData.profileUrl) {
-                $("#profileUrl").attr("src", profileData.profileUrl)
+                $("#empName").text(profileData.name);
+                $("#empCode").text(profileData.empCode);
+                $("#isActive").text(profileData.isActive);
+                if (profileData.profileUrl) {
+                    $("#profileUrl").attr("src", profileData.profileUrl)
+                }
+                $("#markAttendance").show();
+                $("#deny").show();
+            } else {
+                var emptyStr = "_  _  _";
+                $("#empName").text(emptyStr);
+                $("#empCode").text(emptyStr);
+                $("#isActive").text(emptyStr);
+                $("#profileUrl").attr("src", "http://ssl.gstatic.com/accounts/ui/avatar_2x.png")
+                $("#markAttendance").hide();
+                $("#deny").hide();
+
             }
-        } else {
-            var emptyStr = "";
-            $("#empName").text(emptyStr);
-            $("#empCode").text(emptyStr);
-            $("#isActive").text(emptyStr);
-            $("#profileUrl").attr("src", "http://ssl.gstatic.com/accounts/ui/avatar_2x.png")
-            
-        }
         }
 
         function markAttendance() {
@@ -207,7 +224,7 @@
                     console.log("markAttendance Response", response);
                     if (response) {
                         clearOldResult();
-                        enableScanning();
+                        startScanning();
                     }
                 }
             });
@@ -265,6 +282,7 @@
         function clearOldResult() {
             camQrResultTimestamp.textContent = ''
             camQrResult.textContent = 'none'
+            setProfile()
         }
 
         $("#employeeCodeForm").submit(function (event) {
@@ -284,21 +302,24 @@
             startScanning();
         });
 
-        $("#stopCam").click(function() {
+        $("#stopCam").click(function () {
             if (scanner) {
                 if (scanner.isActive()) {
                     console.log("Stopped camera");
                     stopScanning()
 
                     // FIXME
-                    $("#stopCam").text = "Start cam"
-                    $("#stopCam").style = "btn-primary"
+                    $("#stopCam").html("Start Cam")
+                    $("#stopCam").addClass("btn-primary")
+                    $("#stopCam").removeClass("btn-outline-light")
                 } else {
                     startScanning()
 
                     // FIXME
-                    $("#stopCam").text = "Stop cam"
-                    $("#stopCam").style = "btn-outline-warning"
+                    $("#stopCam").html("Stop cam");
+                    $("#stopCam").addClass("btn-outline-warning")
+                    $("#stopCam").removeClass("btn-primary")
+
                 }
             } else {
                 alert("Camera not detected");
