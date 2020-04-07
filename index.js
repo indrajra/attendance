@@ -80,26 +80,26 @@ const readRecord = (req, callback) => {
             if (token) {
                 const profile = req.request.profile;
                 if (profile) { //scan block
-                    let employeeReq = {
+                    let teacherReq = {
                         body: {
                             id: "open-saber.registry.read",
                             request: {
-                                Employee: {
+                                Teacher: {
                                     osid: profile.substr(profile.lastIndexOf('/') + 1)
                                 },
-                                viewTemplateId: "1253943a-6fe3-11ea-bc55-0242ac130003.json"
+                                viewTemplateId: "teacher_owner.json"
                             }
                         },
                         headers: getDefaultHeaders(token)
                     }
-                    registryService.readRecord(employeeReq, function (err, res) {
+                    registryService.readRecord(teacherReq, function (err, res) {
                         if (res) {
                             if (res.params.status === 'SUCCESSFUL') {
                                 let resBody = res.result.Employee
-                                if (resBody.isActive && resBody.empCode == req.request.empCode) {
+                                if (resBody.isActive && resBody.code == req.request.code) {
                                     callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
                                 } else {
-                                    callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                                    callback(null, { body: { recordVerified: false, errMsg: "Invalid Teacher code" }, statusCode: 200 })
                                 }
                             } else if (res.params.status === 'UNSUCCESSFUL') {
                                 callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
@@ -110,31 +110,31 @@ const readRecord = (req, callback) => {
                     })
                 } else {
                     //manully entry of empCode 
-                    let employeeReq = {
+                    let teacherReq = {
                         body: {
                             id: "open-saber.registry.search",
                             request: {
-                                entityType: ["Employee"],
+                                entityType: ["Teacher"],
                                 filters: {
-                                    empCode: {
-                                        eq: req.request.empCode
+                                    code: {
+                                        eq: req.request.code
                                     }
                                 }
                             }
                         },
                         headers: getDefaultHeaders(token)
                     }
-                    registryService.searchRecord(employeeReq, function (err, res) {
+                    registryService.searchRecord(teacherReq, function (err, res) {
                         if (res && res.params.status === 'SUCCESSFUL') {
-                            let resBody = res.result.Employee
+                            let resBody = res.result.Teacher
                             if (resBody.length > 0) {
-                                if (resBody[0].isActive && resBody[0].empCode == req.request.empCode) {
+                                if (resBody[0].code == req.request.code) {
                                     callback(null, { body: { ...resBody[0], ...{ recordVerified: true } }, statusCode: 200 })
                                 } else {
                                     callback(null, { body: { recordVerified: false }, statusCode: 200 })
                                 }
                             } else {
-                                callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                                callback(null, { body: { recordVerified: false, errMsg: "Invalid Teacher code" }, statusCode: 200 })
                             }
 
                         } else {
