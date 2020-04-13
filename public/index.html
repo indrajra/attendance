@@ -18,7 +18,6 @@
             <div class="container">
                 <a class="navbar-brand" href="#"><img src="./logo.png" alt="logo"></a>
                 <div>
-                    <button class="btn btn-outline-light my-2 my-sm-0 mr-4" id="writeToCsv">Write Attendance</button>
                     <button class="btn btn-outline-warning my-2 my-sm-1" id="stopCam">Stop cam</button>
                 </div>
             </div>
@@ -36,7 +35,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-lg-6">
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-muted">Scan QR</h6>
@@ -57,11 +56,11 @@
                             <div class="row" id="enterEmpCodeSec">
                                 <div class="col-sm-12 mb-4">
                                     <form class="form-inline justify-content-center mt-3 needs-validation"
-                                        id="employeeCodeForm">
+                                        id="teacherCodeForm">
                                         <div class="form-group mr-2">
-                                            <label for="employeeCode" class="sr-only">Employee Code</label>
-                                            <input type="text" class="form-control" id="employeeCode"
-                                                placeholder="Enter employee code" required>
+                                            <label for="teacherCode" class="sr-only">Teacher Code</label>
+                                            <input type="text" class="form-control" id="teacherCode"
+                                                placeholder="Enter Teacher Code" required>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Submit</button>
                                     </form>
@@ -71,42 +70,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- profile card -->
+
                 <div class="col-lg-6 mb-4">
-                    <div class="card shadow mb-4" id="profile">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-muted">Result</h6>
-                        </div>
-                        <div class="card-body text-center">
-                            <img class="img-circle" id="#profileUrl"
-                                src="http://ssl.gstatic.com/accounts/ui/avatar_2x.png">
-                            <div>
-                                <table
-                                    class="table table-borderless table-sm table-responsive d-flex justify-content-center">
-                                    <tbody>
-                                        <tr>
-                                            <td>Name :</td>
-                                            <td class="text-start"><span id="empName"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Code :</td>
-                                            <td class="text-start"><span id="empCode"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Active :</td>
-                                            <td class="text-start"><span id="isActive"></span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <button type="button" class="btn btn-default btn-primary mr-4"
-                                id="markAttendance">Allow</button>
-                            <button type="button" class="btn btn-outline-warning" id="deny">Deny</button>
-
-                        </div>
-                    </div>
-
-                    <div class="card shadow mb-4" style="margin-top:-20px">
+                    <div class="card shadow">
                         <div class="card-header py-2">
                             <h6 class="m-0 font-weight-bold text-muted">Debug only</h6>
                         </div>
@@ -121,6 +87,59 @@
             </div>
         </div>
     </section>
+
+    <!-- Modal -->
+    <div class="modal fade bd-example-modal-lg" id="offlineCourseModal" tabindex="-1" role="dialog"
+        aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Offline Course Completion Detail</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center"> <img class="img-circle" id="#profileUrl"
+                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Circle-icons-profile.svg/1200px-Circle-icons-profile.svg.png">
+                    </div>
+                    <form id="teacherForm">
+                        <div class="form-row">
+                            <div class="col-md-8 mb-3">
+                                <label for="teacherName">Name</label>
+                                <input type="text" class="form-control" id="teacherName" placeholder="Name"
+                                    name="teacherName" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="teacherCode">Code</label>
+                                <input type="text" class="form-control" id="teacherCode" placeholder="Code"
+                                    name="teacherCode" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <label for="courseName">Courses</label>
+                                <select id="inputState" class="form-control" id="courseName" placeholder="select"
+                                    required name="courseCode">
+                                    <option value="" selected disabled>Select</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="Marks">Marks</label>
+                                <input type="text" class="form-control" id="marks" placeholder="marks" name="marks"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                                id="modalClose">Close</button>
+                            <button class="btn btn-primary" type="submit" id="submitForm">Update Registry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="./jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
@@ -146,6 +165,7 @@
         const qrScannerEnable = true;
         var scanner;
         var fetchUserData;
+        var offlineCourses = []
         var toggleValue = $("input[type='checkbox']").is(":checked")
 
         function processQRdata(qrData) {
@@ -187,24 +207,13 @@
 
         function setProfile(profileData) {
             if (profileData) {
-                console.log("someone is calling");
-                $("#empName").text(profileData.name);
-                $("#empCode").text(profileData.empCode);
-                $("#isActive").text(profileData.isActive);
+                getOfflineCourses()
+                $("#teacherName").val(profileData.name)
+                $("#teacherCode").val(profileData.code)
                 if (profileData.profileUrl) {
                     $("#profileUrl").attr("src", profileData.profileUrl)
                 }
-                $("#markAttendance").show();
-                $("#deny").show();
-            } else {
-                var emptyStr = "_  _  _";
-                $("#empName").text(emptyStr);
-                $("#empCode").text(emptyStr);
-                $("#isActive").text(emptyStr);
-                $("#profileUrl").attr("src", "http://ssl.gstatic.com/accounts/ui/avatar_2x.png")
-                $("#markAttendance").hide();
-                $("#deny").hide();
-
+                $('#offlineCourseModal').modal('show');
             }
         }
 
@@ -285,19 +294,14 @@
             setProfile()
         }
 
-        $("#employeeCodeForm").submit(function (event) {
+        $("#teacherCodeForm").submit(function (event) {
             event.preventDefault()
-            setResult(camQrResult, JSON.stringify({ empCode: document.getElementById("employeeCode").value }))
-            document.getElementById("employeeCodeForm").reset()
+            setResult(camQrResult, JSON.stringify({ code: document.getElementById("teacherCode").value }))
+            document.getElementById("teacherCodeForm").reset()
         })
 
-        //on click of allow button
-        $("#markAttendance").click(function () {
-            markAttendance();
-        });
-
         //on click of deny button: hide profile card
-        $("#deny").click(function () {
+        $("#modalClose").click(function () {
             clearOldResult();
             startScanning();
         });
@@ -353,6 +357,42 @@
             }
         })
 
+        $("#teacherForm").submit(function (event) {
+            event.preventDefault()
+            var jsonData = {};
+            $('#teacherForm').find('input[type=text],select').each(function () {
+                jsonData[this.name] = this.value
+            })
+            jsonData['courseName'] = $("#inputState option:selected").text();
+            $('#offlineCourseModal').modal('hide')
+            fetchUserData = { ...jsonData, ...fetchUserData }
+            markAttendance()
+            document.getElementById("teacherForm").reset();
+        });
+
+
+        function getOfflineCourses() {
+            $.ajax({
+                url: "http://localhost:7007/offline/courses",
+                type: "get",
+                dataType: "application/json",
+                contentType: "application/json",
+                dataType: "json",
+                success: function (response) {
+                    offlineCourses = response
+                    if (offLineProcess.length > 0) {
+                        $.each(offlineCourses, function (i, item) {
+                            $('#inputState').append(new Option(item.courseName, item.courseCode))
+                        })
+                    }
+                },
+                error: function (error) {
+                    var result = error.responseJSON || JSON.parse(error)
+                    console.log("err in fetching data", result);
+                    viewErrorCard(result)
+                },
+            });
+        }
 
     </script>
 </body>

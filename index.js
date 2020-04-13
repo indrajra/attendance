@@ -9,7 +9,7 @@ const vars = require('./sdk/vars');
 const port = vars.attendancePort;
 const RegistryService = require('./sdk/RegistryService')
 const KeycloakHelper = require('./sdk/KeycloakHelper')
-const AttendanceFormat = require('./AttendanceFormat')
+const OfflineCourseCompletion = require('./OfflineCourseCompletion')
 const logger = require('./sdk/log4j');
 
 var async = require('async');
@@ -32,31 +32,17 @@ app.post("/attendance/registry/fetchUser", (req, res) => {
         } else {
             res.statusCode = 404
             logger.error("fetchUser " + err);
-            res.send({errMsg: err.message})
+            res.send({ errMsg: err.message })
         }
     })
-
-
 })
 
 app.post("/attendance/mark", (req, res) => {
     let reqBody = req.body.request
-    var attendanceFormat = new AttendanceFormat(reqBody.osid, reqBody.name, reqBody.orgName)
-    var currentTime = getCurrentTime()
-    if (attendanceObj.length == 0) {
-        attendanceFormat.setEntryTime(currentTime)
-        attendanceObj.push(attendanceFormat)
-    } else {
-        let index = _.findIndex(attendanceObj, function (obj) { return (attendanceFormat.userId == obj.userId && !obj.exitTime) });
-        if (index >= 0) { // find index: returns the index of the found element, else -1.
-            attendanceObj[index].exitTime = currentTime
-            logger.info("updating exit time of id", attendanceObj[index].userId)
-        } else {
-            attendanceFormat.setEntryTime(currentTime)
-            logger.info("adding entry time of id", attendanceFormat.userId)
-            attendanceObj.push(attendanceFormat)
-        }
-    }
+    var offlineCourseCompletion = new OfflineCourseCompletion(reqBody.osid, reqBody.name, reqBody.courseName, reqBody.courseCode, reqBody.marks)
+    var currentTime = getCurrentTime();
+    offlineCourseCompletion.setCourseCompletionTime(currentTime)
+    utils.addRecordsToCSV(offlineCourseCompletion);
     res.statusCode = 200
     res.send({ status: "SUCCESSFUL" })
 })
@@ -67,8 +53,69 @@ app.post("/update/csv", (req, res) => {
     res.send({ status: "SUCCESSFUL" })
 })
 
+app.get("/offline/courses", (req, res) => {
+    getOffilneCourses(function (err, data) {
+        if (data) {
+            res.statusCode = data.statusCode
+            res.send(data.body)
+        } else {
+            res.statusCode = 404
+            logger.error("fetch offline course " + err);
+            res.send({ errMsg: err.message })
+        }
+    })
+})
+
+const getOffilneCourses = (callback) => {
+    async.waterfall([
+        function (callback) {
+            getTokenDetails(callback)
+        },
+        function (token, callback) {
+            let teacherReq = {
+                body: {
+                    id: "open-saber.registry.search",
+                    request: {
+                        entityType: ["Course"],
+                        filters: {
+                            isOnline: {
+                                eq: false
+                            }
+                        }
+                    }
+                },
+                headers: getDefaultHeaders(token)
+            }
+            registryService.searchRecord(teacherReq, function (err, res) {
+                if (res && res.params.status === 'SUCCESSFUL') {
+                    if (res.result.Course && res.result.Course.length > 0)
+                        callback(null, { body: res.result.Course, statusCode: 200 })
+                    else {
+                        callback(null, { body: { errMsg: "Offline Courses fetch failed" }, statusCode: 500 })
+
+                    }
+                }
+                else if (res.params.status === 'UNSUCCESSFUL') {
+                    callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
+
+                }
+            })
+        }], function (err, result) {
+            if (err) {
+                callback(err, null)
+            } else {
+                callback(null, result);
+            }
+        });
+}
+
+
 const getCurrentTime = () => {
-    return new Date(Date.now()).toLocaleString([], { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true })
+    return new Date(Date.now()).toISOString()
+}
+
+const updateTeacherCourseDetail = () => {
+
 }
 
 const readRecord = (req, callback) => {
@@ -80,26 +127,26 @@ const readRecord = (req, callback) => {
             if (token) {
                 const profile = req.request.profile;
                 if (profile) { //scan block
-                    let employeeReq = {
+                    let teacherReq = {
                         body: {
                             id: "open-saber.registry.read",
                             request: {
-                                Employee: {
+                                Teacher: {
                                     osid: profile.substr(profile.lastIndexOf('/') + 1)
                                 },
-                                viewTemplateId: "1253943a-6fe3-11ea-bc55-0242ac130003.json"
+                                viewTemplateId: "attendance.json"
                             }
                         },
                         headers: getDefaultHeaders(token)
                     }
-                    registryService.readRecord(employeeReq, function (err, res) {
+                    registryService.readRecord(teacherReq, function (err, res) {
                         if (res) {
                             if (res.params.status === 'SUCCESSFUL') {
-                                let resBody = res.result.Employee
-                                if (resBody.isActive && resBody.empCode == req.request.empCode) {
+                                let resBody = res.result.Teacher
+                                if (resBody.code == req.request.code) {
                                     callback(null, { body: { ...resBody, ...{ recordVerified: true } }, statusCode: 200 })
                                 } else {
-                                    callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                                    callback(null, { body: { recordVerified: false, errMsg: "Invalid Teacher code" }, statusCode: 200 })
                                 }
                             } else if (res.params.status === 'UNSUCCESSFUL') {
                                 callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
@@ -109,26 +156,26 @@ const readRecord = (req, callback) => {
                         }
                     })
                 } else {
-                    //manully entry of empCode 
-                    let employeeReq = {
+                    //manully entry of code 
+                    let teacherReq = {
                         body: {
                             id: "open-saber.registry.search",
                             request: {
-                                entityType: ["Employee"],
+                                entityType: ["Teacher"],
                                 filters: {
-                                    empCode: {
-                                        eq: req.request.empCode
+                                    code: {
+                                        eq: req.request.code
                                     }
                                 }
                             }
                         },
                         headers: getDefaultHeaders(token)
                     }
-                    registryService.searchRecord(employeeReq, function (err, res) {
+                    registryService.searchRecord(teacherReq, function (err, res) {
                         if (res && res.params.status === 'SUCCESSFUL') {
-                            let resBody = res.result.Employee
+                            let resBody = res.result.Teacher
                             if (resBody.length > 0) {
-                                if (resBody[0].isActive && resBody[0].empCode == req.request.empCode) {
+                                if (resBody[0].code == req.request.code) {
                                     callback(null, { body: { ...resBody[0], ...{ recordVerified: true } }, statusCode: 200 })
                                 } else {
                                     callback(null, { body: { recordVerified: false }, statusCode: 200 })
@@ -143,17 +190,17 @@ const readRecord = (req, callback) => {
                     })
                 }
             } else {
-                callback (new Error("Cannot get token"))
+                callback(new Error("Cannot get token"))
             }
         }
     ], function (err, result) {
-    logger.info('Main Callback --> ' + err + " " + result);
-    if (err) {
-        callback(err, null)
-    } else {
-        callback(null, result);
-    }
-});
+        logger.info('Main Callback --> ' + err + " " + result);
+        if (err) {
+            callback(err, null)
+        } else {
+            callback(null, result);
+        }
+    });
 }
 
 const getDefaultHeaders = (token) => {
@@ -188,28 +235,22 @@ startServer = () => {
     })
 };
 
-var attendanceObj = utils.getTodayAttendance()
-
 startServer()
 
-if (process.platform === "win32") {
-    var rl = require("readline").createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
+// if (process.platform === "win32") {
+//     var rl = require("readline").createInterface({
+//         input: process.stdin,
+//         output: process.stdout
+//     });
 
-    rl.on("SIGINT", function () {
-        process.emit("SIGINT");
-    });
-}
+//     rl.on("SIGINT", function () {
+//         process.emit("SIGINT");
+//     });
+// }
 
-process.on("SIGINT", async function () {
-    // graceful shutdown
-    // FIXME: Save the csv file and then exit.
-    if (attendanceObj.length > 0) {
-        logger.info("saving reocrds to the csv file")
-        await utils.addRecordsToCSV(attendanceObj);
-    }
-    console.log("Getting killed")
-    process.exit();
-});
+// process.on("SIGINT", async function () {
+//     // graceful shutdown
+//     // FIXME: Save the csv file and then exit.
+//     console.log("Getting killed")
+//     process.exit();
+// });

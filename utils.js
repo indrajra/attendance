@@ -46,14 +46,14 @@ var csvToJson = function (csvFileName) {
     return jsonObject
 }
 
+const csvWriter = createCsvWriter({
+    path: getFileNameForToday(),
+    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" },{id: "courseCode", title: "courseCode" }, { id: "courseName", title: "courseName" }, { id: "marks", title: "marks" }, { id: "completionTime", title: "completionTime" }
+    ], append: false
+});
 
 var addRecordsToCSV = async (data) => {
-    const csvWriter = createCsvWriter({
-        path: getFileNameForToday(),
-        header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "orgName", title: "orgName" }, { id: "entryTime", title: "entryTime" }, { id: "exitTime", title: "exitTime" }
-        ], append: false
-    });
-    await csvWriter.writeRecords(data) // returns a promise
+    await csvWriter.writeRecords([data]) // returns a promise
         .then(() => {
             console.log("+++++++++++done")
         });
