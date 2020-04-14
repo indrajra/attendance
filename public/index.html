@@ -58,8 +58,8 @@
                                     <form class="form-inline justify-content-center mt-3 needs-validation"
                                         id="teacherCodeForm">
                                         <div class="form-group mr-2">
-                                            <label for="teacherCode" class="sr-only">Teacher Code</label>
-                                            <input type="text" class="form-control" id="teacherCode"
+                                            <label for="teacherCodeInput" class="sr-only">Teacher Code</label>
+                                            <input type="text" class="form-control" id="teacherCodeInput"
                                                 placeholder="Enter Teacher Code" required>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Submit</button>
@@ -90,8 +90,8 @@
 
     <!-- Modal -->
     <div class="modal fade bd-example-modal-lg" id="offlineCourseModal" tabindex="-1" role="dialog"
-        aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        aria-labelledby="exampleModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Offline Course Completion Detail</h5>
@@ -130,15 +130,23 @@
                                     required>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
-                                id="modalClose">Close</button>
-                            <button class="btn btn-primary" type="submit" id="submitForm">Update Registry</button>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isCompleted" name="isCompleted">
+                                <label class="form-check-label" for="isCompleted">
+                                    isCompleted
+                                </label>
+                            </div>
                         </div>
-                    </form>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modalClose">Close</button>
+                    <button class="btn btn-primary" type="submit" id="submitForm">Update Registry</button>
+                </div>
+                </form>
             </div>
         </div>
+    </div>
     </div>
 
     <script src="./jquery-3.3.1.slim.min.js"></script>
@@ -167,6 +175,7 @@
         var fetchUserData;
         var offlineCourses = []
         var toggleValue = $("input[type='checkbox']").is(":checked")
+        getOfflineCourses()
 
         function processQRdata(qrData) {
             console.log("scanned qr data", qrData);
@@ -207,18 +216,19 @@
 
         function setProfile(profileData) {
             if (profileData) {
-                getOfflineCourses()
                 $("#teacherName").val(profileData.name)
                 $("#teacherCode").val(profileData.code)
                 if (profileData.profileUrl) {
                     $("#profileUrl").attr("src", profileData.profileUrl)
                 }
                 $('#offlineCourseModal').modal('show');
+            } else {
+                document.getElementById("teacherForm").reset();
+                $("#profileUrl").attr("src", "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Circle-icons-profile.svg/1200px-Circle-icons-profile.svg.png")
             }
         }
 
-        function markAttendance() {
-            console.log("mark attendance", fetchUserData)
+        function updateCsv() {
             var reqBody = {
                 request: fetchUserData
             }
@@ -230,7 +240,7 @@
                 contentType: "application/json",
                 dataType: "json",
                 success: function (response) {
-                    console.log("markAttendance Response", response);
+                    console.log("updateCsv Response", response);
                     if (response) {
                         clearOldResult();
                         startScanning();
@@ -296,12 +306,11 @@
 
         $("#teacherCodeForm").submit(function (event) {
             event.preventDefault()
-            setResult(camQrResult, JSON.stringify({ code: document.getElementById("teacherCode").value }))
+            setResult(camQrResult, JSON.stringify({ code: document.getElementById("teacherCodeInput").value }))
             document.getElementById("teacherCodeForm").reset()
         })
 
-        //on click of deny button: hide profile card
-        $("#modalClose").click(function () {
+        $("#offlineCourseModal").on("hidden.bs.modal", function () {
             clearOldResult();
             startScanning();
         });
@@ -364,9 +373,10 @@
                 jsonData[this.name] = this.value
             })
             jsonData['courseName'] = $("#inputState option:selected").text();
+            jsonData['isCompleted'] = $('#isCompleted').is(":checked")
             $('#offlineCourseModal').modal('hide')
             fetchUserData = { ...jsonData, ...fetchUserData }
-            markAttendance()
+            updateCsv()
             document.getElementById("teacherForm").reset();
         });
 
@@ -380,7 +390,7 @@
                 dataType: "json",
                 success: function (response) {
                     offlineCourses = response
-                    if (offLineProcess.length > 0) {
+                    if (offlineCourses.length > 0) {
                         $.each(offlineCourses, function (i, item) {
                             $('#inputState').append(new Option(item.courseName, item.courseCode))
                         })

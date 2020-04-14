@@ -17,8 +17,8 @@ var getFormattedDate = (d) => {
 /**
  * returns a string
  */
-var getFileNameForToday = () => {
-    var fileName = reportsFolderPath + '/' + getFormattedDate(Date.now()) + '.csv'
+var getFileName = () => {
+    var fileName = reportsFolderPath + '/' + "offileCourseCompletion" + '.csv'
     console.log("Get the file name for today " + fileName)
     return fileName
 }
@@ -47,8 +47,8 @@ var csvToJson = function (csvFileName) {
 }
 
 const csvWriter = createCsvWriter({
-    path: getFileNameForToday(),
-    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" },{id: "courseCode", title: "courseCode" }, { id: "courseName", title: "courseName" }, { id: "marks", title: "marks" }, { id: "completionTime", title: "completionTime" }
+    path: getFileName(),
+    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "courseCode", title: "courseCode" }, { id: "courseName", title: "courseName" }, { id: "isCompleted", title: "isCompleted" }, { id: "marks", title: "marks" }, { id: "completionTime", title: "completionTime" }
     ], append: false
 });
 
@@ -61,7 +61,7 @@ var addRecordsToCSV = async (data) => {
 
 var getCurrentRecords = () => {
     var attendanceRecords = []
-    var fileName = getFileNameForToday()
+    var fileName = getFileName()
     if (fs.existsSync(fileName)) {
         attendanceRecords = csvToJson(fileName)
     }
@@ -70,7 +70,7 @@ var getCurrentRecords = () => {
 
 var getRecordsForToday = () => {
     var attendanceRecords = []
-    var fileName = getFileNameForToday()
+    var fileName = getFileName()
     if (fs.existsSync(fileName)) {
         takeFileBackup(fileName)
         attendanceRecords = csvToJson(fileName)

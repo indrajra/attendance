@@ -11,11 +11,12 @@ const RegistryService = require('./sdk/RegistryService')
 const KeycloakHelper = require('./sdk/KeycloakHelper')
 const OfflineCourseCompletion = require('./OfflineCourseCompletion')
 const logger = require('./sdk/log4j');
+var dateFormat = require('dateformat');
+const _ = require('lodash')
 
 var async = require('async');
 const keycloakHelper = new KeycloakHelper(vars.keycloak);
 var registryService = new RegistryService();
-var _ = require('lodash');
 
 app.use(cors())
 app.use(express.static('public'))
@@ -39,10 +40,11 @@ app.post("/attendance/registry/fetchUser", (req, res) => {
 
 app.post("/attendance/mark", (req, res) => {
     let reqBody = req.body.request
-    var offlineCourseCompletion = new OfflineCourseCompletion(reqBody.osid, reqBody.name, reqBody.courseName, reqBody.courseCode, reqBody.marks)
+    var offlineCourseCompletion = new OfflineCourseCompletion(reqBody.osid, reqBody.name, reqBody.courseName, reqBody.courseCode, reqBody.marks, reqBody.isCompleted)
     var currentTime = getCurrentTime();
     offlineCourseCompletion.setCourseCompletionTime(currentTime)
     utils.addRecordsToCSV(offlineCourseCompletion);
+    updateTeacherCourseDetail(offlineCourseCompletion)
     res.statusCode = 200
     res.send({ status: "SUCCESSFUL" })
 })
@@ -53,6 +55,7 @@ app.post("/update/csv", (req, res) => {
     res.send({ status: "SUCCESSFUL" })
 })
 
+//to get list of offline courses
 app.get("/offline/courses", (req, res) => {
     getOffilneCourses(function (err, data) {
         if (data) {
@@ -64,6 +67,20 @@ app.get("/offline/courses", (req, res) => {
             res.send({ errMsg: err.message })
         }
     })
+})
+
+//to get offline course completion details of provided user
+app.get("/course/completion/:userId", (req, res) => {
+    let userId = req.params.userId
+    if (userId) {
+        let records = utils.getCurrentRecords();
+        let filter = _.filter(records, { userId: userId });
+        res.statusCode = 200
+        res.send(filter)
+    } else {
+        res.statusCode = 404
+        res.send({ errMsg: "Invalid user id" })
+    }
 })
 
 const getOffilneCourses = (callback) => {
@@ -87,18 +104,21 @@ const getOffilneCourses = (callback) => {
                 headers: getDefaultHeaders(token)
             }
             registryService.searchRecord(teacherReq, function (err, res) {
-                if (res && res.params.status === 'SUCCESSFUL') {
-                    if (res.result.Course && res.result.Course.length > 0)
-                        callback(null, { body: res.result.Course, statusCode: 200 })
-                    else {
-                        callback(null, { body: { errMsg: "Offline Courses fetch failed" }, statusCode: 500 })
-
+                if (res) {
+                    if (res.params.status === 'SUCCESSFUL') {
+                        if (res.result.Course && res.result.Course.length > 0)
+                            callback(null, { body: res.result.Course, statusCode: 200 })
+                        else {
+                            callback(null, { body: { errMsg: "Offline Courses fetch failed" }, statusCode: 500 })
+                        }
                     }
+                    else if (res.params.status === 'UNSUCCESSFUL') {
+                        callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
+                    }
+                } else {
+                    callback(null, { body: { errMsg: err.code }, statusCode: 500 })
                 }
-                else if (res.params.status === 'UNSUCCESSFUL') {
-                    callback(null, { body: { errMsg: res.params.errmsg }, statusCode: 500 })
 
-                }
             })
         }], function (err, result) {
             if (err) {
@@ -111,11 +131,37 @@ const getOffilneCourses = (callback) => {
 
 
 const getCurrentTime = () => {
-    return new Date(Date.now()).toISOString()
+    return dateFormat(new Date(), "yyyy-mm-dd'T'h:MM:ss TT")
 }
 
-const updateTeacherCourseDetail = () => {
-
+const updateTeacherCourseDetail = (req) => {
+    getTokenDetails((err, token) => {
+        if (token) {
+            const teacherReq = {
+                body: {
+                    id: "open-saber.registry.update",
+                    request: {
+                        Teacher: {
+                            osid: req.userId,
+                            courses: [{
+                                courseCode: req.courseCode,
+                                isOnline: false,
+                                courseName: req.courseName
+                            }]
+                        }
+                    }
+                },
+                headers: getDefaultHeaders(token)
+            }
+            registryService.updateRecord(teacherReq, function (err, res) {
+                if (res && res.params.status == "SUCCESSFUL") {
+                    logger.info("successfully updated offline course completion", res)
+                } else {
+                    logger.info("updation failed", res)
+                }
+            })
+        }
+    })
 }
 
 const readRecord = (req, callback) => {
@@ -134,7 +180,7 @@ const readRecord = (req, callback) => {
                                 Teacher: {
                                     osid: profile.substr(profile.lastIndexOf('/') + 1)
                                 },
-                                viewTemplateId: "attendance.json"
+                                viewTemplateId: "0f029c54-7e11-11ea-bc55-0242ac130003.json"
                             }
                         },
                         headers: getDefaultHeaders(token)

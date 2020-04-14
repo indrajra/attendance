@@ -39,8 +39,8 @@ class RegistryService {
 
     updateRecord(value, callback) {
         const options = {
-            url: registryUrl + "/update",
-            headers: this.getDefaultHeaders(value.headers),
+            url: registryUrl + "/registry/update",
+            headers: value.headers,
             body: value.body
         }
         httpUtil.post(options, function (err, res) {
