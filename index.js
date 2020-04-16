@@ -227,7 +227,7 @@ const readRecord = (req, callback) => {
                                     callback(null, { body: { recordVerified: false }, statusCode: 200 })
                                 }
                             } else {
-                                callback(null, { body: { recordVerified: false, errMsg: "Invalid Employee code" }, statusCode: 200 })
+                                callback(null, { body: { recordVerified: false, errMsg: "Invalid Teacher code" }, statusCode: 200 })
                             }
 
                         } else {
