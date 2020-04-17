@@ -35,7 +35,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-lg-6">
+                <div class="col-lg-12" style="padding: 0 16rem 0 16rem;">
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-muted">Scan QR</h6>
@@ -71,7 +71,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-6 mb-4">
+                <div class="col-lg-6 mb-4" style="display: none;">
                     <div class="card shadow">
                         <div class="card-header py-2">
                             <h6 class="m-0 font-weight-bold text-muted">Debug only</h6>
@@ -289,7 +289,7 @@
         function createScanner() {
             scanner = new QrScanner(video, result => {
                 if (result) {
-                    startScanning()
+                    stopScanning()
                     setResult(camQrResult, result)
                 }
             });
