@@ -135,19 +135,57 @@ const getCurrentTime = () => {
 }
 
 const updateTeacherCourseDetail = (req) => {
-    getTokenDetails((err, token) => {
-        if (token) {
+    async.waterfall([
+        function (callback) {
+            getTokenDetails(callback)
+        },
+        function (token, callback) {
+            if (token) {
+                const teacherReq = {
+                    body: {
+                        id: "open-saber.registry.read",
+                        request: {
+                            Teacher: {
+                                osid: req.userId,
+                            },
+                            viewTemplateId: "0f029c54-7e11-11ea-bc55-0242ac130003.json"
+                        }
+                    },
+                    headers: getDefaultHeaders(token)
+                }
+                registryService.readRecord(teacherReq, function (err, res) {
+                    if (res && res.params.status == "SUCCESSFUL") {
+                        logger.info("successfully read Teacher course details", res)
+                        callback(null, token, res);
+                    } else {
+                        logger.info("read failed", res)
+                        callback(res, null)
+                    }
+                })
+            }
+            else {
+                callback(new Error("Cannot get token"))
+            }
+        },
+        function (token, readRes, callback) {
+            let completedCourse = {
+                courseCode: req.courseCode,
+                isOnline: false,
+                courseName: req.courseName
+            }
+            let courses = readRes.result.Teacher.courses
+            if (courses && courses.length > 0) {
+                courses.push(completedCourse)
+            } else {
+                courses = [completedCourse]
+            }
             const teacherReq = {
                 body: {
                     id: "open-saber.registry.update",
                     request: {
                         Teacher: {
                             osid: req.userId,
-                            courses: [{
-                                courseCode: req.courseCode,
-                                isOnline: false,
-                                courseName: req.courseName
-                            }]
+                            courses: courses
                         }
                     }
                 },
@@ -155,13 +193,19 @@ const updateTeacherCourseDetail = (req) => {
             }
             registryService.updateRecord(teacherReq, function (err, res) {
                 if (res && res.params.status == "SUCCESSFUL") {
-                    logger.info("successfully updated offline course completion", res)
+                    callback(null, res)
                 } else {
-                    logger.info("updation failed", res)
+                    callback(res, null)
                 }
             })
-        }
-    })
+        }], function (err, result) {
+            logger.info('Main Callback --> ' + err + " " + result);
+            if (err) {
+                logger.debug("err in updating teacher course", err)
+            } else {
+                logger.info("succesfully  updated teacher course", result)
+            }
+        });
 }
 
 const readRecord = (req, callback) => {
@@ -212,7 +256,8 @@ const readRecord = (req, callback) => {
                                     code: {
                                         eq: req.request.code
                                     }
-                                }
+                                },
+                                viewTemplateId: "0f029c54-7e11-11ea-bc55-0242ac130003.json"
                             }
                         },
                         headers: getDefaultHeaders(token)

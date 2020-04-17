@@ -261,17 +261,16 @@
         function setResult(label, result) {
             label.textContent = result;
             if (result) {
-                stopScanning();
                 if (toggleValue) {
                     processQRdata(result); //online
                 } else {
                     offLineProcess(result); //offline
                 }
+                camQrResultTimestamp.textContent = new Date().toString();
+                label.style.color = 'teal';
+                clearTimeout(label.highlightTimeout);
+                label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
             }
-            camQrResultTimestamp.textContent = new Date().toString();
-            label.style.color = 'teal';
-            clearTimeout(label.highlightTimeout);
-            label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
         }
 
         // ####### Web Cam Scanning #######
@@ -288,7 +287,12 @@
         }
 
         function createScanner() {
-            scanner = new QrScanner(video, result => setResult(camQrResult, result));
+            scanner = new QrScanner(video, result => {
+                if (result) {
+                    startScanning()
+                    setResult(camQrResult, result)
+                }
+            });
             scanner.setInversionMode("both");
         }
 
@@ -305,6 +309,7 @@
         }
 
         $("#teacherCodeForm").submit(function (event) {
+            console.log("On submit of Teacher code form")
             event.preventDefault()
             setResult(camQrResult, JSON.stringify({ code: document.getElementById("teacherCodeInput").value }))
             document.getElementById("teacherCodeForm").reset()
@@ -320,15 +325,11 @@
                 if (scanner.isActive()) {
                     console.log("Stopped camera");
                     stopScanning()
-
-                    // FIXME
                     $("#stopCam").html("Start Cam")
                     $("#stopCam").addClass("btn-primary")
                     $("#stopCam").removeClass("btn-outline-light")
                 } else {
                     startScanning()
-
-                    // FIXME
                     $("#stopCam").html("Stop cam");
                     $("#stopCam").addClass("btn-outline-warning")
                     $("#stopCam").removeClass("btn-primary")
