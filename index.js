@@ -13,6 +13,8 @@ const OfflineCourseCompletion = require('./OfflineCourseCompletion')
 const logger = require('./sdk/log4j');
 var dateFormat = require('dateformat');
 const _ = require('lodash')
+const httpUtil = require('./sdk/httpUtils.js')
+const registryUrl = vars['utilServiceUrl']
 
 var async = require('async');
 const keycloakHelper = new KeycloakHelper(vars.keycloak);
@@ -40,11 +42,11 @@ app.post("/attendance/registry/fetchUser", (req, res) => {
 
 app.post("/attendance/mark", (req, res) => {
     let reqBody = req.body.request
-    var offlineCourseCompletion = new OfflineCourseCompletion(reqBody.osid, reqBody.name, reqBody.courseName, reqBody.courseCode, reqBody.marks, reqBody.isCompleted)
+    var offlineCourseCompletion = new OfflineCourseCompletion(reqBody.osid, reqBody.name, reqBody.courseName, reqBody.courseCode, reqBody.marks, reqBody.isCompleted, reqBody.isTADAEligible)
     var currentTime = getCurrentTime();
     offlineCourseCompletion.setCourseCompletionTime(currentTime)
-    utils.addRecordsToCSV(offlineCourseCompletion);
-    updateTeacherCourseDetail(offlineCourseCompletion)
+    utils.addRecordsToCSV(offlineCourseCompletion);    
+    updateTeacherCourseDetail(offlineCourseCompletion);
     res.statusCode = 200
     res.send({ status: "SUCCESSFUL" })
 })
@@ -133,14 +135,35 @@ const getOffilneCourses = (callback) => {
 const getCurrentTime = () => {
     return dateFormat(new Date(), "yyyy-mm-dd'T'h:MM:ss TT")
 }
+const generateCourseCertificate =(token, req, callback) => {
+   
+    const options = {
+        url: registryUrl + "/create/certificate",
+        body: {
 
+            courseName: req.courseName,
+            userName: req.userName
+        }
+    }
+    httpUtil.post(options, function (err, res) {
+        if (res) {
+            callback(null, token, res.body.result.response[0].pdfUrl)
+        } else{
+            callback(res, null)
+        }
+    });  
+}
 const updateTeacherCourseDetail = (req) => {
     async.waterfall([
         function (callback) {
             getTokenDetails(callback)
         },
-        function (token, callback) {
+        function(token, callback){
+            generateCourseCertificate(token, req, callback)
+        },
+        function (token, pdfUrl, callback) {
             if (token) {
+                req.certUrl = pdfUrl;
                 const teacherReq = {
                     body: {
                         id: "open-saber.registry.read",
@@ -171,9 +194,13 @@ const updateTeacherCourseDetail = (req) => {
             let completedCourse = {
                 courseCode: req.courseCode,
                 isOnline: false,
-                courseName: req.courseName
+                courseName: req.courseName,
+                score: req.marks,
+                status:req.isCompleted,
+                isTADAEligible:req.isTADAEligible,
+                certUrl:req.certUrl
             }
-            let courses = readRes.result.Teacher.courses
+            let courses = readRes.result.Teacher.Courses
             if (courses && courses.length > 0) {
                 courses.push(completedCourse)
             } else {
@@ -185,12 +212,13 @@ const updateTeacherCourseDetail = (req) => {
                     request: {
                         Teacher: {
                             osid: req.userId,
-                            courses: courses
+                            Courses: courses
                         }
                     }
                 },
                 headers: getDefaultHeaders(token)
             }
+            console.log(JSON.stringify(teacherReq));
             registryService.updateRecord(teacherReq, function (err, res) {
                 if (res && res.params.status == "SUCCESSFUL") {
                     callback(null, res)

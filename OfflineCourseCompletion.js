@@ -8,14 +8,16 @@ class OfflineCourseCompletion {
      * @param {*} marks points earned
      * @param {*} isCompleted wheather course completed or not (true or false)
      */
-    constructor(userId, userName, courseName, courseCode, marks, isCompleted) {
+    constructor(userId, userName, courseName, courseCode, marks, isCompleted, isTADAEligible) {
+    
         this.completionTime = undefined
         this.userId = userId
         this.userName = userName
         this.courseName = courseName
-        this.marks = marks
+        this.score = marks
         this.courseCode = courseCode
         this.isCompleted = isCompleted
+        this.isTADAEligible = isTADAEligible
     }
 
     setCourseCompletionTime(d) {

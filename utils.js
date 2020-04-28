@@ -48,7 +48,7 @@ var csvToJson = function (csvFileName) {
 
 const csvWriter = createCsvWriter({
     path: getFileName(),
-    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "courseCode", title: "courseCode" }, { id: "courseName", title: "courseName" }, { id: "isCompleted", title: "isCompleted" }, { id: "marks", title: "marks" }, { id: "completionTime", title: "completionTime" }
+    header: [{ id: "userId", title: "userId" }, { id: "userName", title: "userName" }, { id: "courseCode", title: "courseCode" }, { id: "courseName", title: "courseName" }, { id: "isCompleted", title: "isCompleted" }, { id: "isTADAEligible", title: "isTADAEligible" }, { id: "score", title: "marks" }, { id: "completionTime", title: "completionTime" }
     ], append: false
 });
 

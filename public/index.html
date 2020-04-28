@@ -119,9 +119,13 @@
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
                                 <label for="courseName">Courses</label>
-                                <select id="inputState" class="form-control" id="courseName" placeholder="select"
-                                    required name="courseCode">
+                                <select id="inputState" class="form-control" placeholder="select" required name="courseCode">
                                     <option value="" selected disabled>Select</option>
+                                    <option value="COURSE01" >Java</option>
+                                    <option value="COURSE02" >Angular</option>
+                                    <option value="COURSE03" >React</option>
+                                    <option value="COURSE04" >NodeJS</option>
+                                    <option value="COURSE05" >C#</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -135,6 +139,14 @@
                                 <input class="form-check-input" type="checkbox" id="isCompleted" name="isCompleted">
                                 <label class="form-check-label" for="isCompleted">
                                     isCompleted
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isTADAEligible" name="isTADAEligible">
+                                <label class="form-check-label" for="isTADAEligible">
+                                    isTADAEligible
                                 </label>
                             </div>
                         </div>
@@ -175,7 +187,7 @@
         var fetchUserData;
         var offlineCourses = []
         var toggleValue = $("input[type='checkbox']").is(":checked")
-        getOfflineCourses()
+        //getOfflineCourses()
 
         function processQRdata(qrData) {
             console.log("scanned qr data", qrData);
@@ -375,6 +387,7 @@
             })
             jsonData['courseName'] = $("#inputState option:selected").text();
             jsonData['isCompleted'] = $('#isCompleted').is(":checked")
+            jsonData['isTADAEligible'] = $('#isTADAEligible').is(":checked")
             $('#offlineCourseModal').modal('hide')
             fetchUserData = { ...jsonData, ...fetchUserData }
             updateCsv()
